@@ -1,6 +1,7 @@
 const http = require("http");
 const { networkInterfaces } = require("os");
 const onvif = require("onvif");
+const port = 3333
 
 function main() {
   process.on("uncaughtException", function (err) {
@@ -74,6 +75,7 @@ async function getCameraRtspUri() {
 function startServer(serverIpAddress) {
   http
     .createServer(async (req, res) => {
+      console.log("Received request.")
       try {
         const rtspUri = await getCameraRtspUri();
         const uri = `vlc://${rtspUri}`
@@ -93,8 +95,8 @@ function startServer(serverIpAddress) {
         res.end();
       }
     })
-    .listen(3000, () => {
-      console.log(`Server started. http://${serverIpAddress}:3000`);
+    .listen(port, () => {
+      console.log(`Server started. http://${serverIpAddress}:${port}`);
     });
 }
 
