@@ -1,0 +1,16 @@
+[Unit]
+Description=IP camera loader server service
+After=syslog.target network.target
+
+[Service]
+Type=simple
+Environment=PATH=/usr/local/bin
+ExecStart=/usr/local/bin/node index.js
+WorkingDirectory=/home/pi/services/ipcamera-loader
+KillMode=process
+Restart=always
+User=pi
+Group=pi
+
+[Install]
+WantedBy=multi-user.target
