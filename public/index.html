@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<title>IP Camera loader</title>
+<style>
+  #message {
+    color: #333;
+    font-size: medium;
+  }
+  #description {
+    color: #aaa;
+    font-size: small;
+  }
+</style>
+<p id="message"></p>
+<p id="description"></p>
+<script>
+  (async () => {
+    const showStatus = (message, description) => {
+      document.getElementById("message").innerText = message || "";
+      document.getElementById("description").innerText = description || "";
+    };
+    showStatus("Searching camera...");
+    const res = await fetch("/streamUri");
+    if (res.status == 200) {
+      const resBody = await res.json();
+      const uri = resBody.uri;
+      showStatus("Camera found!", uri);
+      location.href = uri;
+    } else {
+      const resBody = await res.json();
+      showStatus(resBody.message, resBody.stack);
+    }
+  })();
+</script>
