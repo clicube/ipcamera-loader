@@ -1,7 +1,7 @@
 #!/bin/bash -x
 
 npm install
-cp ipcamera-loaderd.service /etc/systemd/system/
-systemctl daemon-reload
-systemctl enable ipcamera-loaderd
-systemctl restart ipcamera-loaderd
+sudo cp ipcamera-loaderd.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable ipcamera-loaderd
+sudo systemctl restart ipcamera-loaderd
