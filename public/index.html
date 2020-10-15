@@ -1,33 +1,44 @@
 <!DOCTYPE html>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>IP Camera loader</title>
 <style>
+  #loading {
+    margin: 24px;
+    width: 64px;
+    height: 64px;
+  }
   #message {
+    margin: 24px;
     color: #333;
-    font-size: medium;
+    font-size: large;
+    font-family: monospace;
   }
   #description {
+    margin: 24px;
     color: #aaa;
     font-size: small;
+    font-family: monospace;
   }
 </style>
+<img id="loading" src="loading.gif" />
 <p id="message"></p>
 <p id="description"></p>
 <script>
   (async () => {
-    const showStatus = (message, description) => {
+    const showResult = (message, description) => {
+      document.getElementById("loading").style.display = "none";
       document.getElementById("message").innerText = message || "";
       document.getElementById("description").innerText = description || "";
     };
-    showStatus("Searching camera...");
     const res = await fetch("/streamUri");
     if (res.status == 200) {
       const resBody = await res.json();
       const uri = resBody.uri;
-      showStatus("Camera found!", uri);
+      showResult("Camera found!", uri);
       location.href = uri;
     } else {
       const resBody = await res.json();
-      showStatus(resBody.message, resBody.stack);
+      showResult(resBody.message, resBody.stack);
     }
   })();
 </script>
