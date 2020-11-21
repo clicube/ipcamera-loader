@@ -1,6 +1,6 @@
-
 build:
-	go build -ldflags="-w" -trimpath -o ipcamera-loaderd
+	go build -o ipcamera-loaderd
+	#go build -ldflags="-w" -trimpath -o ipcamera-loaderd
 
 install: build
 	sudo cp ipcamera-loaderd.service /etc/systemd/system/
