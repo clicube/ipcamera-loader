@@ -3,16 +3,16 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"os"
 
-	"github.com/beevik/etree"
 	"github.com/use-go/onvif"
-	onvif_media "github.com/use-go/onvif/media"
-	onvif_xsd_onvif "github.com/use-go/onvif/xsd/onvif"
+	"github.com/use-go/onvif/media"
+	xsd_onvif "github.com/use-go/onvif/xsd/onvif"
 )
 
 func findNetwork() (*net.Interface, *net.IPNet, error) {
@@ -33,108 +33,114 @@ func findNetwork() (*net.Interface, *net.IPNet, error) {
 	return nil, nil, fmt.Errorf("No network interface is available")
 }
 
-//StreamURI ...
-type StreamURI struct {
+// StreamUriHandler
+type StreamUriHandler struct {
 	networkInterface string
 }
 
-func (s *StreamURI) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-	devices := onvif.GetAvailableDevicesAtSpecificEthernetInterface(s.networkInterface)
-	if len(devices) == 0 {
+func (s *StreamUriHandler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	fmt.Printf("Searching camera on network interface %s\n", s.networkInterface)
+	devs := onvif.GetAvailableDevicesAtSpecificEthernetInterface(s.networkInterface)
+	if len(devs) == 0 {
+		fmt.Println("Camera not found")
 		writer.WriteHeader(http.StatusInternalServerError)
-		writer.Write(s.errorResponse("Camera not found."))
+		writer.Write(s.errorResponse("Camera not found"))
 		return
 	}
-	device := devices[0]
+	dev := devs[0]
+	fmt.Println("Camera found")
 
-	profileToken, err := s.getProfileToken(device)
+	profileToken, err := s.getProfileToken(dev)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		writer.Write(s.errorResponse(err.Error()))
 		return
 	}
+	fmt.Println("ProfileToken:", profileToken)
 
-	streamURI, err := s.getStreamURI(device, profileToken)
+	streamUri, err := s.getStreamUri(dev, profileToken)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		writer.Write(s.errorResponse(err.Error()))
 		return
 	}
+	fmt.Println("StreamUri:", streamUri)
 
 	body := map[string]interface{}{
 		"result": "OK",
-		"uri":    streamURI,
+		"uri":    streamUri,
 	}
 	bytes, _ := json.Marshal(body)
 	writer.Write(bytes)
 }
 
-func (s *StreamURI) read(reader io.Reader) string {
+func (s *StreamUriHandler) read(reader io.Reader) string {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(reader)
 	return buf.String()
 }
 
-func (s *StreamURI) getProfileToken(device onvif.Device) (string, error) {
-	res, err := device.CallMethod(onvif_media.GetProfiles{})
+type GetProfilesResponseWrapper struct {
+	XMLName             xml.Name                  `xml:"Envelope"`
+	GetProfilesResponse media.GetProfilesResponse `xml:"Body>GetProfilesResponse"`
+}
+
+func (s *StreamUriHandler) getProfileToken(device onvif.Device) (string, error) {
+	fmt.Println("Getting Profiles")
+	res, err := device.CallMethod(media.GetProfiles{})
 	if err != nil {
 		return "", err
 	}
 	if res.StatusCode != 200 {
-		return "", fmt.Errorf("Failed to get profiles")
+		return "", fmt.Errorf("Status Code: %d", res.StatusCode)
 	}
-	xml := s.read(res.Body)
-	doc := etree.NewDocument()
-	if err := doc.ReadFromString(xml); err != nil {
-		return "", err
-
-	}
-	profileElements := doc.Root().FindElements("./Body/GetProfilesResponse/Profiles")
-	for _, attr := range profileElements[0].Attr {
-		if attr.Key == "token" {
-			return attr.Value, nil
-		}
-	}
-	return "", fmt.Errorf("Failed to read profile token")
-}
-
-func (s *StreamURI) getStreamURI(device onvif.Device, profileToken string) (string, error) {
-	res, err := device.CallMethod(s.createGetStreamURIMessage(profileToken))
+	str := s.read(res.Body)
+	wrapper := GetProfilesResponseWrapper{}
+	err = xml.Unmarshal([]byte(str), &wrapper)
 	if err != nil {
 		return "", err
 	}
-	if res.StatusCode != 200 {
-		return "", fmt.Errorf("Failed to get streamURI")
+	profiles := wrapper.GetProfilesResponse.Profiles
+	if len(profiles) == 0 {
+		return "", fmt.Errorf("no profile found")
 	}
-	xml := s.read(res.Body)
-	doc := etree.NewDocument()
-	if err := doc.ReadFromString(xml); err != nil {
-		return "", err
-
-	}
-	element := doc.Root().FindElement("./Body/GetStreamUriResponse/MediaUri/Uri")
-	if element == nil {
-		return "", fmt.Errorf("Failed to read streamURI")
-
-	}
-	return element.Text(), nil
-
+	return string(profiles[0].Token), nil
 }
 
-func (s *StreamURI) createGetStreamURIMessage(profileToken string) onvif_media.GetStreamUri {
-	return onvif_media.GetStreamUri{
-		StreamSetup: onvif_xsd_onvif.StreamSetup{
-			Stream: onvif_xsd_onvif.StreamType("RTP-Unicast"),
-			Transport: onvif_xsd_onvif.Transport{
+type GetStreamUriResponseWrapper struct {
+	XMLName              xml.Name                   `xml:"Envelope"`
+	GetStreamUriResponse media.GetStreamUriResponse `xml:"Body>GetStreamUriResponse"`
+}
+
+func (s *StreamUriHandler) getStreamUri(device onvif.Device, profileToken string) (string, error) {
+	fmt.Println("Getting Stream URI")
+	getStreamUri := media.GetStreamUri{
+		StreamSetup: xsd_onvif.StreamSetup{
+			Stream: xsd_onvif.StreamType("RTP-Unicast"),
+			Transport: xsd_onvif.Transport{
 				Protocol: "RTSP",
 			},
 		},
-		ProfileToken: onvif_xsd_onvif.ReferenceToken(profileToken),
+		ProfileToken: xsd_onvif.ReferenceToken(profileToken),
 	}
-
+	res, err := device.CallMethod(getStreamUri)
+	if err != nil {
+		return "", err
+	}
+	if res.StatusCode != 200 {
+		return "", fmt.Errorf("Status Code: %d", res.StatusCode)
+	}
+	str := s.read(res.Body)
+	wrapper := GetStreamUriResponseWrapper{}
+	err = xml.Unmarshal([]byte(str), &wrapper)
+	if err != nil {
+		return "", err
+	}
+	uri := string(wrapper.GetStreamUriResponse.MediaUri.Uri)
+	return uri, nil
 }
 
-func (s *StreamURI) errorResponse(message string) []byte {
+func (s *StreamUriHandler) errorResponse(message string) []byte {
 	body := map[string]interface{}{
 		"result":  "NG",
 		"message": message,
@@ -144,18 +150,21 @@ func (s *StreamURI) errorResponse(message string) []byte {
 }
 
 func main() {
+	const port = 3333
 	networkInterface, ipNet, err := findNetwork()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Network interface: %s\n", networkInterface.Name)
-	fmt.Printf("Ip address       : %s\n", ipNet.IP)
+	fmt.Println("Server Info:")
+	fmt.Printf("  Network interface: %s\n", networkInterface.Name)
+	fmt.Printf("  Ip address       : %s\n", ipNet.IP)
+	fmt.Printf("  Port             : %d\n", port)
 
 	http.Handle("/", http.FileServer(http.Dir("public")))
-	http.Handle("/streamUri", &StreamURI{
+	http.Handle("/streamUri", &StreamUriHandler{
 		networkInterface: networkInterface.Name,
 	})
-	http.ListenAndServe("0.0.0.0:3333", nil)
+	http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
 }
