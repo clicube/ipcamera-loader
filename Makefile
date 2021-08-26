@@ -1,6 +1,6 @@
 build:
 	mkdir -p dist
-	go build -ldflags="-w" -trimpath -o dist/ipcamera-loaderd
+	cd backend &&	go build -ldflags="-w" -trimpath -o ../dist/ipcamera-loaderd
 	cp -r public dist/
 
 build-debug:
