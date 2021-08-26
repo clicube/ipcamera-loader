@@ -46,14 +46,15 @@ func main() {
 	history := History{
 		imageDir: imageDir,
 		camera:   &camera,
-		interval: 10 * time.Second,
-		ttl:      300 * time.Second,
+		interval: 10 * time.Minute,
+		ttl:      3 * 24 * time.Hour,
 	}
 	history.Start()
 
 	http.Handle("/", http.FileServer(http.Dir("public")))
-	http.Handle("/streamUri", &StreamUriHandler{camera: &camera})
-	http.Handle("/history/", history.Handler("/history"))
+	http.Handle("/api/streamUri", &StreamUriHandler{camera: &camera})
+	http.Handle("/api/history", history.ListHandler("/historyimages"))
+	http.Handle("/historyimages/", history.FileHandler("/historyimages"))
 	log.Println("Starting server, port:", port)
 	http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
 }

@@ -1,11 +1,14 @@
 build:
 	mkdir -p dist
 	cd backend &&	go build -ldflags="-w" -trimpath -o ../dist/ipcamera-loaderd
-	cp -r public dist/
+	cd frontend && npm ci && npm run build
+	mkdir -p dist/public
+	cp -r frontend/out/* dist/public/
+	cp ipcamera-loaderd.service dist/
 
 build-debug:
 	mkdir -p dist
-	go build -o dist/ipcamera-loaderd
+	cd backend &&	go build -o ../dist/ipcamera-loaderd
 
 install: build
 	sudo cp ipcamera-loaderd.service /etc/systemd/system/
