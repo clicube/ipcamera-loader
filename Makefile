@@ -1,6 +1,11 @@
 build:
-	go build -o ipcamera-loaderd
-	#go build -ldflags="-w" -trimpath -o ipcamera-loaderd
+	mkdir -p dist
+	go build -ldflags="-w" -trimpath -o dist/ipcamera-loaderd
+	cp -r public dist/
+
+build-debug:
+	mkdir -p dist
+	go build -o dist/ipcamera-loaderd
 
 install: build
 	sudo cp ipcamera-loaderd.service /etc/systemd/system/
@@ -20,8 +25,8 @@ update: pull install
 build-arm6:
 	GOOS=linux GOARCH=arm GOARM=6 go build -ldflags="-w" -trimpath -o ipcamera-loaderd
 
-run: build
-	./ipcamera-loaderd
+run: build-debug
+	cd dist && ./ipcamera-loaderd
 
 clean:
-	rm ipcamera-loaderd
+	rm -rf dist
