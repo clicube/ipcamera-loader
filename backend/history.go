@@ -95,15 +95,25 @@ func (h *History) cleanupDir() error {
 	return nil
 }
 
-func (h *History) Handler(mountpoint string) http.Handler {
-	s := &http.ServeMux{}
-	log.Println("h.imageDir:", h.imageDir)
-	s.Handle(mountpoint+"/list", &listHandler{
+func (h *History) FileHandler(mountPath string) http.Handler {
+	fileServer := http.FileServer(http.Dir(h.imageDir))
+	return http.StripPrefix(mountPath, &fileHandler{fileServer: fileServer})
+}
+
+type fileHandler struct {
+	fileServer http.Handler
+}
+
+func (h *fileHandler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
+	writer.Header().Add("Cache-Control", "public, max-age=262800, immutable")
+	h.fileServer.ServeHTTP(writer, req)
+}
+
+func (h *History) ListHandler(urlFilesPath string) http.Handler {
+	return &listHandler{
 		imageDir:  h.imageDir,
-		filesPath: mountpoint + "/files",
-	})
-	s.Handle(mountpoint+"/files/", http.StripPrefix(mountpoint+"/files", http.FileServer(http.Dir(h.imageDir))))
-	return s
+		filesPath: urlFilesPath,
+	}
 }
 
 type listHandler struct {
