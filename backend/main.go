@@ -47,7 +47,7 @@ func main() {
 		imageDir: imageDir,
 		camera:   &camera,
 		interval: 10 * time.Minute,
-		ttl:      3 * 24 * time.Hour,
+		ttl:      7 * 24 * time.Hour,
 	}
 	history.Start()
 
