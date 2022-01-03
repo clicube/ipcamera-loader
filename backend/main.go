@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
 
 // StreamUriHandler
@@ -31,10 +30,13 @@ func (s *StreamUriHandler) ServeHTTP(writer http.ResponseWriter, req *http.Reque
 }
 
 func main() {
-	const port = 3333
-	const imageDir = "/tmp/ipcamera-images"
+	var err error
+	config, err := LoadConfig()
+	if config == nil {
+		os.Exit(1)
+	}
 
-	err := os.MkdirAll(imageDir, 0755)
+	err = os.MkdirAll(config.History.ImageDir, 0755)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
@@ -44,10 +46,10 @@ func main() {
 	camera.Init()
 
 	history := History{
-		imageDir: imageDir,
+		imageDir: config.History.ImageDir,
 		camera:   &camera,
-		interval: 10 * time.Minute,
-		ttl:      7 * 24 * time.Hour,
+		interval: config.History.Interval.Duration,
+		ttl:      config.History.Ttl.Duration,
 	}
 	history.Start()
 
@@ -55,6 +57,6 @@ func main() {
 	http.Handle("/api/streamUri", &StreamUriHandler{camera: &camera})
 	http.Handle("/api/history", history.ListHandler("/historyimages"))
 	http.Handle("/historyimages/", history.FileHandler("/historyimages"))
-	log.Println("Starting server, port:", port)
-	http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), nil)
+	log.Println("Starting server, port:", config.Port)
+	http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", config.Port), nil)
 }

@@ -1,0 +1,6 @@
+port = 3333
+
+[history]
+imageDir = "/tmp/ipcamera-images"
+interval = "10m"
+ttl = "168h" # 7 days
