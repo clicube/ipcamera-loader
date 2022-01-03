@@ -17,7 +17,7 @@ export const CameraHistoryViewer: React.FC = () => {
   const { data } = useHistoryImages();
   const [selected, setSelected] = useState<number | undefined>(undefined);
   const images = data?.files;
-  const image = images && selected ? images[selected] : undefined;
+  const image = images && selected !== undefined ? images[selected] : undefined;
 
   // Control selected image
   const min = 0;
