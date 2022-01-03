@@ -29,9 +29,21 @@ export const CameraHistoryViewer: React.FC = () => {
     );
   }, []);
 
+  const selectPrevSkip = useCallback(() => {
+    setSelected((selected) =>
+      selected !== undefined ? Math.max(min, selected - 6) : undefined
+    );
+  }, []);
+
   const selectNext = useCallback(() => {
     setSelected((selected) =>
       selected !== undefined ? Math.min(max, selected + 1) : undefined
+    );
+  }, [max]);
+
+  const selectNextSkip = useCallback(() => {
+    setSelected((selected) =>
+      selected !== undefined ? Math.min(max, selected + 6) : undefined
     );
   }, [max]);
 
@@ -71,7 +83,9 @@ export const CameraHistoryViewer: React.FC = () => {
       />
       <Controller
         selectPrev={selectPrev}
+        selectPrevSkip={selectPrevSkip}
         selectNext={selectNext}
+        selectNextSkip={selectNextSkip}
         select={select}
         selected={selected}
         min={min}

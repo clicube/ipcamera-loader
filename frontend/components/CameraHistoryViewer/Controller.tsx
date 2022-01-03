@@ -2,7 +2,9 @@ import { Box, Button, Slider } from "@mui/material";
 
 export const Controller = ({
   selectPrev,
+  selectPrevSkip,
   selectNext,
+  selectNextSkip,
   select,
   min,
   max,
@@ -10,7 +12,9 @@ export const Controller = ({
   disabled,
 }: {
   selectPrev: () => void;
+  selectPrevSkip: () => void;
   selectNext: () => void;
+  selectNextSkip: () => void;
   select: (v: number) => void;
   min: number;
   max: number;
@@ -20,6 +24,15 @@ export const Controller = ({
   return (
     <>
       <Box display="flex" justifyContent="center">
+        <Button
+          size="large"
+          variant="outlined"
+          sx={{ m: 1 }}
+          onClick={selectPrevSkip}
+          disabled={disabled}
+        >
+          &lt;&lt;
+        </Button>
         <Button
           size="large"
           variant="outlined"
@@ -37,6 +50,15 @@ export const Controller = ({
           disabled={disabled}
         >
           &gt;
+        </Button>
+        <Button
+          size="large"
+          variant="outlined"
+          sx={{ m: 1 }}
+          onClick={selectNextSkip}
+          disabled={disabled}
+        >
+          &gt;&gt;
         </Button>
       </Box>
       <Slider
