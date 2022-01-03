@@ -1,12 +1,12 @@
 import "../styles/globals.css";
-import type {AppProps} from "next/app";
+import type { AppProps } from "next/app";
 import Head from "next/dist/shared/lib/head";
 import React from "react";
-import {ThemeProvider, CssBaseline} from "@material-ui/core";
-import {blue, pink} from "@material-ui/core/colors";
-import {createTheme} from "@material-ui/core/styles";
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import { blue, pink } from "@mui/material/colors";
+import { createTheme } from "@mui/material/styles";
 
-function MyApp({Component, pageProps}: AppProps) {
+function MyApp({ Component, pageProps }: AppProps) {
   const [darkMode, setDarkMode] = React.useState(false);
 
   const theme = createTheme({

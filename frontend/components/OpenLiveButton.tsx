@@ -1,5 +1,5 @@
 import React from "react";
-import {Button} from "@material-ui/core";
+import { Button } from "@mui/material";
 
 const OpenLiveButton: React.FC = () => {
   const onClickOpenLive = () => {
@@ -12,4 +12,4 @@ const OpenLiveButton: React.FC = () => {
   };
   return <Button onClick={onClickOpenLive}>Open Live</Button>;
 };
-export {OpenLiveButton};
+export { OpenLiveButton };
