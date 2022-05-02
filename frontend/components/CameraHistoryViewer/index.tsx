@@ -78,6 +78,9 @@ export const CameraHistoryViewer: React.FC = () => {
     <>
       <ImageView
         src={image?.path}
+        timestamp={
+          image?.timestamp ? new Date(image?.timestamp * 1000) : undefined
+        }
         invalidated={invalidated}
         invalidate={invalidateImage}
       />

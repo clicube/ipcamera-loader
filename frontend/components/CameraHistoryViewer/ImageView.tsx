@@ -1,23 +1,37 @@
-import { Box, Card } from "@mui/material";
+import { Box, Card, Chip } from "@mui/material";
 
 export const ImageView = ({
   src,
+  timestamp,
   invalidated,
   invalidate,
 }: {
   src?: string;
+  timestamp?: Date;
   invalidated: boolean;
   invalidate: () => void;
 }) => {
   const content =
     src && !invalidated ? (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt="capture"
-        style={{ width: "100%", height: "100%" }}
-        onError={invalidate}
-      />
+      <>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt="capture"
+          style={{ width: "100%", height: "100%" }}
+          onError={invalidate}
+        />
+        <Chip
+          label={timestamp?.toLocaleString()}
+          size="small"
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            background: "#ddd",
+          }}
+        />
+      </>
     ) : (
       <Box
         width="100%"
